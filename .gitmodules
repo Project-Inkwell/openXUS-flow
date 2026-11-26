@@ -1,8 +1,11 @@
 [submodule "nextpnr"]
 	path = nextpnr
 	url = ../nextpnr.git
-	branch = ultrascale
+	branch = ultrascale-pcie
 [submodule "db"]
 	path = db
 	url = ../openXUS-db.git
 	branch = main
+[submodule "pci_eerie"]
+	path = pci_eerie
+	url = https://github.com/regymm/pci_eerie.git

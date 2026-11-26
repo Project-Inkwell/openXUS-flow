@@ -11,6 +11,12 @@
 #             0x00100000 and 0x40000000, as Vivado's own SERV's do
 #   picorv32  PicoRV32 runs its program from block RAM: the count of the
 #             primes below 2048 (309) in its result register, its LED toggling
+#   refclk    the PCIe slot's 100 MHz reference clock, through IBUFDS_GTE4 and
+#             a BUFG_GT where the PCIe endpoint takes it, counts at 95-105 MHz
+#             (the slot drives it only for a moment after the host boots: load,
+#             reboot the host, then read)
+#   pcie      pci_eerie (the `pci_eerie` submodule), a soft PCIe endpoint on
+#             lane 0's GTY: its state read back (it does not enumerate yet)
 #
 # Says PASS or FAIL for each and exits non-zero if any failed. Only the
 # volatile configuration memory is written: never the flash.
@@ -140,6 +146,34 @@ led = {bits[32] for bits in reads}
 print("picorv32: %d reads, result %s, LED %s" % (len(reads), sorted(result), sorted(led)))
 sys.exit(0 if reads and result == {309} and led == {"0", "1"} else 1)
 EOF2
+}
+
+refclk() {
+    build refclk "gt_blackbox.v top.v" || return 1
+    d=$WORK/refclk
+    # Each counter as the rig's `count` reads one: its bits named count[k].
+    for counter in count ctrl txc; do
+        { head -2 "$d/design.ll"; grep -E "Net=$counter\[[0-9]+\]$" "$d/design.ll" | sed "s/Net=$counter\[/Net=count[/"; } > "$d/$counter.ll"
+        scp -q "$d/$counter.ll" "$RIG:/tmp/card-refclk-$counter.ll"
+    done
+    { head -2 "$d/design.ll"; grep -E "Net=lock_q$" "$d/design.ll"; } > "$d/lock.ll"
+    scp -q "$d/lock.ll" "$RIG:/tmp/card-refclk-lock.ll"
+    ssh "$RIG" "cd ~/opt/src && for c in count ctrl txc; do echo \"== \$c\"; timeout 60 ./cfg 4 count /tmp/card-refclk-\$c.ll 2 500; done; echo '== lock'; timeout 60 ./cfg 4 bits /tmp/card-refclk-lock.ll 2 300" > "$d/count.log" 2>&1
+    rate() { awk -v c="== $1" '$0 == c { on = 1; next } /^==/ { on = 0 } on' "$d/count.log" | grep -o -- '-> [0-9.]* MHz' | head -1 | cut -d' ' -f2; }
+    mhz=$(rate count)
+    echo "refclk: the reference clock counts at ${mhz:-?} MHz, TXOUTCLK at $(rate txc) MHz, CFGMCLK at $(rate ctrl) MHz; CPLLLOCK $(awk '/^== lock/ { on = 1; next } on && /^read/ { print $4 }' "$d/count.log" | tr '\n' ' ')"
+    awk -v m="${mhz:-0}" 'BEGIN { exit !(m >= 95 && m <= 105) }'
+}
+
+pcie() {
+    d=$WORK/pcie
+    rm -rf "$d" && mkdir -p "$d" && cp "$HERE/designs/pcie"/* "$d/" && cp "$REPO/pci_eerie/rtl"/* "$d/"
+    srcs="gt_blackbox.v top.v $(tr '\n' ' ' < "$REPO/pci_eerie/rtl/files.f")"
+    build pcie "$srcs" "-nolutram -nosrl -nodsp -nocarry -nowidelut" || return 1
+    { head -2 "$d/design.ll"
+      for k in $(seq 0 31); do grep "Net=pcie_diag\[$k\]$" "$d/design.ll"; done; } > "$d/watched.ll"
+    scp -q "$d/watched.ll" "$RIG:/tmp/card-pcie.ll" && ssh "$RIG" "cd ~/opt/src && timeout 60 ./cfg 4 bits /tmp/card-pcie.ll 4 400" > "$d/bits.log" 2>&1
+    cat "$d/bits.log"
 }
 
 failed=0

@@ -1,0 +1,8 @@
+set_property PACKAGE_PIN B11 [get_ports led]
+set_property IOSTANDARD LVCMOS33 [get_ports led]
+set_property LOC GTYE4_COMMON_X0Y1 [get_cells ibufds_ref]
+set_property LOC BUFG_GT_SYNC_X0Y22 [get_cells sync_ref]
+set_property LOC BUFG_GT_X0Y29 [get_cells bufg_ref]
+set_property LOC GTYE4_CHANNEL_X0Y7 [get_cells gty_ch0]
+set_property LOC BUFG_GT_SYNC_X0Y24 [get_cells sync_tx]
+set_property LOC BUFG_GT_X0Y31 [get_cells bufg_tx]

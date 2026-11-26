@@ -35,10 +35,26 @@ USB ports of the motherboard. For details, see `tools/ch347/README.md`, and Cupi
 great collection of resources for the card/programmer used in this project:
 https://github.com/Cupiad/Alibaba-AS02MC04
 
+## This branch: `pcie`
+
+Work toward a PCIe endpoint, not yet working: `nextpnr` is our nextpnr's
+`ultrascale-pcie` branch (the transceivers, the PCIe block, and the ties
+the tool holds a hard block's unconnected inputs at), and `card.sh` has two
+more checks:
+
+- **refclk**: the slot's 100 MHz reference clock reaches the fabric through
+  the transceiver quad's IBUFDS_GTE4 and a BUFG_GT, and a channel's CPLL
+  locks to it. The host's BIOS drives the clock only for about 54 ms after
+  it boots, so the check is: load, reboot the host, read.
+- **pcie**: pci_eerie (`pci_eerie/`, a soft PCIe endpoint written for
+  7-series transceivers) on lane 0's GTYE4_CHANNEL: its state read back. It
+  does not enumerate yet; its transceiver wrapper lacks the reset sequence
+  and clocking a GTY in PCIe mode needs.
+
 ## License
 
 The code in this repository is licensed under the ISC license. See [LICENSE](LICENSE).
-The submodules (`db`, `nextpnr`) and the third-party designs `card/card.sh` fetches (SERV,
+The submodules (`db`, `nextpnr`, `pci_eerie`) and the third-party designs `card/card.sh` fetches (SERV,
 PicoRV32) are under their own licenses.
 
 ## Disclaimer
