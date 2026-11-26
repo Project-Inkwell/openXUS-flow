@@ -1,0 +1,3 @@
+# The firmware's compiler: GCC for RISC-V, run on the host's firmware.
+FROM docker.io/library/debian:trixie
+RUN apt-get update && apt-get install -y --no-install-recommends gcc-riscv64-unknown-elf binutils-riscv64-unknown-elf coreutils && rm -rf /var/lib/apt/lists/*

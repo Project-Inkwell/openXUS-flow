@@ -1,0 +1,8 @@
+[submodule "nextpnr"]
+	path = nextpnr
+	url = ../nextpnr.git
+	branch = ultrascale
+[submodule "db"]
+	path = db
+	url = ../openXUS-db.git
+	branch = main

@@ -1,0 +1,8 @@
+set_property PACKAGE_PIN B11 [get_ports {led[0]}]
+set_property PACKAGE_PIN C11 [get_ports {led[1]}]
+set_property PACKAGE_PIN A10 [get_ports {led[2]}]
+set_property PACKAGE_PIN B10 [get_ports {led[3]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {led[0]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {led[1]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {led[2]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {led[3]}]
